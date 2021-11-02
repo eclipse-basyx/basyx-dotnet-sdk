@@ -10,7 +10,7 @@
     <Copyright>Copyright 2021 - Robert Bosch GmbH</Copyright>
     <PackageLicenseExpression>EPL-2.0</PackageLicenseExpression>
     <PackageProjectUrl>https://wiki.eclipse.org/BaSyx</PackageProjectUrl>
-    <RepositoryUrl>https://git.eclipse.org/r/plugins/gitiles/basyx/basyx/+/master/sdks/csnet/</RepositoryUrl>
+    <RepositoryUrl>https://github.com/eclipse-basyx/basyx-dotnet-sdk</RepositoryUrl>
     <PackageIcon>basyxlogo.png</PackageIcon>
     <PackageTags>BaSys BaSyx Models Export</PackageTags>
     <GenerateEmbeddedFilesManifest>true</GenerateEmbeddedFilesManifest>
@@ -38,7 +38,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="..\..\resources\basyxlogo.png">
+    <None Include="..\resources\basyxlogo.png">
       <Pack>True</Pack>
       <PackagePath></PackagePath>
     </None>
