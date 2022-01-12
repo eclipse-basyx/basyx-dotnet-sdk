@@ -28,11 +28,20 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
         {
             IdShort = idShort;
             MetaData = new Dictionary<string, string>();
+            Description = new LangStringSet();
         }
 
         public bool ShouldSerializeMetaData()
         {
             if (MetaData?.Count > 0)
+                return true;
+            else
+                return false;
+        }
+
+        public bool ShouldSerializeDescription()
+        {
+            if (Description?.Count > 0)
                 return true;
             else
                 return false;
