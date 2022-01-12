@@ -17,16 +17,37 @@ namespace BaSyx.Utils.Settings.Types
     public class ServerSettings : Settings<ServerSettings>
     {
         public ControllerConfiguration ControllerConfig { get; set; } = new ControllerConfiguration();
+        public UserInterfaceConfiguration UIConfig { get; set; } = new UserInterfaceConfiguration();
+    }
 
-        public class ControllerConfiguration
+    public class ControllerConfiguration
+    {
+        [XmlArray("Controllers")]
+        [XmlArrayItem("Controller")]
+        public List<string> Controllers { get; set; }
+
+        public ControllerConfiguration()
         {
-            [XmlArrayItem("Controller")]
-            public List<string> Controllers { get; set; }
-
-            public ControllerConfiguration()
-            {
-                Controllers = new List<string>();
-            }
+            Controllers = new List<string>();
         }
+    }
+
+    public class UserInterfaceConfiguration
+    {
+        public bool? BlazorSupportEnabled { get; set; }
+        public string CompanyLogo { get; set; }
+        public string Title { get; set; }
+
+        [XmlArray("Links")]
+        [XmlArrayItem("Link")]
+        public List<Link> Links { get; set; } = new List<Link>();
+    }
+
+    public class Link
+    {
+        [XmlAttribute("name")]
+        public string Name { get; set; }
+        [XmlAttribute("href")]
+        public string Url { get; set; }
     }
 }
