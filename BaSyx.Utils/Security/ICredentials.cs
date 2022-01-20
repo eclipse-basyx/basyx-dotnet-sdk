@@ -8,13 +8,8 @@
 *
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
-using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace BaSyx.Utils.Security
+namespace BaSyx.Security.Abstractions
 {
     public interface ICredentials
-    {
-    }
+    { }
 }
