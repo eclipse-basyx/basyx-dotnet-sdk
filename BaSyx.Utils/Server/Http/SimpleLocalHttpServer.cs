@@ -8,9 +8,8 @@
 *
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
-using NLog;
+using Microsoft.Extensions.Logging;
 using System;
-using System.Collections.Generic;
 using System.Collections.Specialized;
 using System.IO;
 using System.Net;
@@ -30,7 +29,7 @@ namespace BaSyx.Utils.Server.Http
         private Action<HttpListenerResponse> messageResponse = null;
         private Action<HttpListenerContext> messageHandler = null;
 
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static ILogger logger = LoggingExtentions.CreateLogger<SimpleLocalHttpServer>();
 
         public SimpleLocalHttpServer(string uriPrefix)
         {
@@ -60,7 +59,7 @@ namespace BaSyx.Utils.Server.Http
                         await Listen(listener);
                 }, cancellationToken.Token, TaskCreationOptions.LongRunning, TaskScheduler.Current);
 
-                logger.Info("Http-Listener started");
+                logger.LogInformation("Http-Listener started");
             }
         }
 
@@ -99,7 +98,7 @@ namespace BaSyx.Utils.Server.Http
             }
             catch (Exception e)
             {
-                logger.Error(e, "Http-Listener Exception: " + e.Message);
+                logger.LogError(e, "Http-Listener Exception: " + e.Message);
             }
         }
 
@@ -109,7 +108,7 @@ namespace BaSyx.Utils.Server.Http
             {
                 cancellationToken.Cancel();
                 listener.Stop();
-                logger.Info("Http-Listener stopped");
+                logger.LogInformation("Http-Listener stopped");
             }
         }        
 

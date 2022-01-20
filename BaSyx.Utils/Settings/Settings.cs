@@ -11,8 +11,8 @@
 using BaSyx.Utils.AssemblyHandling;
 using BaSyx.Utils.FileHandling;
 using BaSyx.Utils.Settings.Sections;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -60,7 +60,7 @@ namespace BaSyx.Utils.Settings
 
         public static SettingsCollection SettingsCollection { get; } = new SettingsCollection();
 
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<Settings>();
        
         private FileWatcher fileWatcher;
 
@@ -97,14 +97,14 @@ namespace BaSyx.Utils.Settings
                                 }
                                 catch (Exception exp)
                                 {
-                                    logger.Info(exp, "Cannot load settings of type: " + rootName + " because type is either never used or not referenced");
+                                    logger.LogInformation(exp, "Cannot load settings of type: " + rootName + " because type is either never used or not referenced");
                                     continue;
                                 }
                             }
                     }
                     catch (Exception e)
                     {
-                        logger.Warn(e, "Cannot load settings file: " + files[i]);
+                        logger.LogWarning(e, "Cannot load settings file: " + files[i]);
                     }
                 }
             }
@@ -119,7 +119,7 @@ namespace BaSyx.Utils.Settings
         {
             if (string.IsNullOrEmpty(filePath) || !File.Exists(filePath))
             {
-                logger.Warn("Settings file does not exist: " + filePath);
+                logger.LogWarning("Settings file does not exist: " + filePath);
                 return null;
             }
 
@@ -140,18 +140,18 @@ namespace BaSyx.Utils.Settings
 
                     settings.FilePath = filePath;
 
-                    if(logger.IsDebugEnabled)
-                        logger.Debug("Settings loaded: " + JsonConvert.SerializeObject(settings, Newtonsoft.Json.Formatting.Indented));
+                    if(logger.IsEnabled(LogLevel.Debug))
+                        logger.LogDebug("Settings loaded: " + JsonConvert.SerializeObject(settings, Newtonsoft.Json.Formatting.Indented));
 
                     return settings;
                 }
-                logger.Warn("No settings of Type " + settingsType.Name + " loaded: " + filePath);
+                logger.LogWarning("No settings of Type " + settingsType.Name + " loaded: " + filePath);
                 return null;
 
             }
             catch (Exception e)
             {
-                logger.Error(e, "Could not load " + filePath);
+                logger.LogError(e, "Could not load " + filePath);
                 return null;
             }
         } 
@@ -177,11 +177,11 @@ namespace BaSyx.Utils.Settings
                 string settingsXmlContent = serializer.Serialize(this);
                 File.WriteAllText(filePath, settingsXmlContent);
 
-                logger.Info("Settings saved: " + filePath);
+                logger.LogInformation("Settings saved: " + filePath);
             }
             catch (Exception e)
             {
-                logger.Error(e, "Could not serialize to " + filePath);
+                logger.LogError(e, "Could not serialize to " + filePath);
             }
         }
     }
