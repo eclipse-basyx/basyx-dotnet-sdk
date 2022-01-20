@@ -24,7 +24,6 @@
 
 
   <ItemGroup>
-    <PackageReference Include="NLog" Version="4.7.9" />
     <PackageReference Include="System.IO.Packaging" Version="5.0.0" />
     <PackageReference Include="Microsoft.Extensions.FileProviders.Embedded" Version="5.0.5" />
   </ItemGroup>

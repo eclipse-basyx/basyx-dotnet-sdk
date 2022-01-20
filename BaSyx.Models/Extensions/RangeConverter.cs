@@ -11,16 +11,16 @@
 using BaSyx.Models.Core.AssetAdministrationShell.Generics;
 using BaSyx.Models.Core.AssetAdministrationShell.Implementations;
 using BaSyx.Models.Core.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NLog;
 using System;
 
 namespace BaSyx.Models.Extensions
 {
     public class RangeConverter : JsonConverter
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<RangeConverter>();
 
         public override bool CanWrite => false;
         public override bool CanRead => true;
@@ -59,7 +59,7 @@ namespace BaSyx.Models.Extensions
             }
             catch (Exception e)
             {
-                logger.Error(e, $"Unable to deserialize ${objectType.Name}");
+                logger.LogError(e, $"Unable to deserialize ${objectType.Name}");
                 return null;
             }
            

@@ -8,7 +8,7 @@
 *
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
-using NLog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +21,7 @@ namespace BaSyx.Utils.Network
 {
     public static class NetworkUtils
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger("NetworkUtils");
 
         /// <summary>
         /// This method returns the closest source IP address relative to the the target IP address. 
@@ -126,23 +126,23 @@ namespace BaSyx.Utils.Network
             {
                 using (Ping pinger = new Ping())
                 {
-                    logger.Info($"Pinging {hostNameOrAddress}...");
+                    logger.LogInformation($"Pinging {hostNameOrAddress}...");
                     PingReply reply = await pinger.SendPingAsync(hostNameOrAddress, timeout).ConfigureAwait(false);
                     if (reply.Status == IPStatus.Success)
                     {
-                        logger.Info($"Ponged from {hostNameOrAddress} successfully");
+                        logger.LogInformation($"Ponged from {hostNameOrAddress} successfully");
                         return true;
                     }
                     else
                     {
-                        logger.Warn($"Pinging {hostNameOrAddress} -> PingReply-Status: " + Enum.GetName(typeof(IPStatus), reply.Status));
+                        logger.LogWarning($"Pinging {hostNameOrAddress} -> PingReply-Status: " + Enum.GetName(typeof(IPStatus), reply.Status));
                         return false;
                     }
                 }
             }
             catch (PingException e)
             {
-                logger.Error(e, "Ping-Exception");
+                logger.LogError(e, "Ping-Exception");
                 return false;
             }
         }

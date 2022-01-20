@@ -11,7 +11,7 @@
 using BaSyx.Models.Connectivity;
 using BaSyx.Utils.Network;
 using BaSyx.Utils.Settings.Sections;
-using NLog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -20,7 +20,7 @@ namespace BaSyx.API.Components
 {
     public static class DefaultEndpointRegistration
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger("DefaultEndpointRegistration");
         public static void UseAutoEndpointRegistration(this IAssetAdministrationShellRepositoryServiceProvider serviceProvider, ServerConfiguration serverConfiguration)
         {
             string multiUrl = serverConfiguration.Hosting.Urls.Find(u => u.Contains("+"));
@@ -70,7 +70,7 @@ namespace BaSyx.API.Components
             }
             catch (Exception e)
             {
-                logger.Warn(e, "Error converting input string: " + input + " - Message: " + e.Message);
+                logger.LogWarning(e, "Error converting input string: " + input + " - Message: " + e.Message);
                 return null;
             }
             
@@ -126,13 +126,13 @@ namespace BaSyx.API.Components
                 {
                     string address = endpointType + "://" + ipAddress.ToString() + ":" + port;
                     aasEndpoints.Add(EndpointFactory.CreateEndpoint(endpointType, address, null));
-                    logger.Info($"Using {address} as endpoint");
+                    logger.LogInformation($"Using {address} as endpoint");
                 }
                 else if (includeIPv6 && ipAddress.AddressFamily == System.Net.Sockets.AddressFamily.InterNetworkV6)
                 {
                     string address = endpointType + "://[" + ipAddress.ToString() + "]:" + port;
                     aasEndpoints.Add(EndpointFactory.CreateEndpoint(endpointType, address, null));
-                    logger.Info($"Using {address} as endpoint");
+                    logger.LogInformation($"Using {address} as endpoint");
                 }
                 else
                     continue;

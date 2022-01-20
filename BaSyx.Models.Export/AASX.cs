@@ -15,8 +15,8 @@ using System.IO.Packaging;
 using System.Linq;
 using BaSyx.Models.Core.AssetAdministrationShell.Identification;
 using BaSyx.Models.Core.AssetAdministrationShell.Generics;
-using NLog;
 using BaSyx.Utils.FileHandling;
+using Microsoft.Extensions.Logging;
 
 namespace BaSyx.Models.Export
 {
@@ -34,8 +34,8 @@ namespace BaSyx.Models.Export
         public static readonly char[] InvalidFileNameChars = GetInvalidFileNameChars();
         public static readonly Uri ORIGIN_URI = new Uri("/aasx/aasx-origin", UriKind.RelativeOrAbsolute);
 
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
-    
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<AASX>();
+
         public List<PackagePart> SupplementaryFiles { get; } = new List<PackagePart>();
 
         private readonly Package _aasxPackage;
@@ -73,7 +73,7 @@ namespace BaSyx.Models.Export
                     }
                     catch(Exception e)
                     {
-                        logger.Warn(e, "Relationsship " + relationship.TargetUri + "does not exist in the package - Exception: " + e.Message);
+                        logger.LogWarning(e, "Relationsship " + relationship.TargetUri + "does not exist in the package - Exception: " + e.Message);
                         continue;
                     }
                   
@@ -179,7 +179,7 @@ namespace BaSyx.Models.Export
                 }
                 catch (Exception e)
                 {
-                    logger.Warn(e, "Relationsship " + relationship.TargetUri + "does not exist in the package - Exception: " + e.Message);
+                    logger.LogWarning(e, "Relationsship " + relationship.TargetUri + "does not exist in the package - Exception: " + e.Message);
                     continue;
                 }
             }
@@ -202,7 +202,7 @@ namespace BaSyx.Models.Export
                 }
                 catch (Exception e)
                 {
-                    logger.Warn(e, "Relationsship " + relationship.TargetUri + "does not exist in the package - Exception: " + e.Message);
+                    logger.LogWarning(e, "Relationsship " + relationship.TargetUri + "does not exist in the package - Exception: " + e.Message);
                     continue;
                 }
             }
@@ -217,7 +217,7 @@ namespace BaSyx.Models.Export
             }
             catch (Exception e)
             {
-                logger.Error(e, "Unable to write to Core Properties");
+                logger.LogError(e, "Unable to write to Core Properties");
             }
         }
 
@@ -229,7 +229,7 @@ namespace BaSyx.Models.Export
             }
             catch (Exception e)
             {
-                logger.Error(e, "Unable to retrieve Core Properties");
+                logger.LogError(e, "Unable to retrieve Core Properties");
                 return null;
             }
         }
@@ -333,7 +333,7 @@ namespace BaSyx.Models.Export
                         }
                         break;
                     default:
-                        logger.Error("Not supported file format: " + extension);
+                        logger.LogError("Not supported file format: " + extension);
                         environment = null;
                         break;
                 }
@@ -364,7 +364,7 @@ namespace BaSyx.Models.Export
                         }
                         break;
                     default:
-                        logger.Error("Not supported file format: " + extension);
+                        logger.LogError("Not supported file format: " + extension);
                         environment = null;
                         break;
                 }
@@ -411,7 +411,7 @@ namespace BaSyx.Models.Export
                 if (!string.IsNullOrEmpty(contentType))
                     AddStreamToAASX(targetUri, fileStream, contentType, compressionOption);
                 else
-                    logger.Warn($"Unable to add {filePath} to AASX - contentType is not recognized");
+                    logger.LogWarning($"Unable to add {filePath} to AASX - contentType is not recognized");
             }
         }
 

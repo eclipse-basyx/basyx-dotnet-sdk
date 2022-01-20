@@ -20,9 +20,9 @@ using BaSyx.Models.Connectivity.Descriptors;
 using BaSyx.Models.Core.Common;
 using BaSyx.Models.Communication;
 using System.Threading.Tasks;
-using NLog;
 using System.Threading;
 using BaSyx.Models.Core.AssetAdministrationShell.Implementations;
+using Microsoft.Extensions.Logging;
 
 namespace BaSyx.API.Components
 {
@@ -31,7 +31,7 @@ namespace BaSyx.API.Components
     /// </summary>
     public class SubmodelServiceProvider : ISubmodelServiceProvider
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<SubmodelServiceProvider>();
 
         private ISubmodel _submodel;
 
@@ -408,9 +408,9 @@ namespace BaSyx.API.Components
             {
                return new Result<InvocationResponse>(false, new NotFoundMessage($"Request with id {requestId}"));
             }
-        }              
-       
-        public IResult PublishEvent(IEventMessage eventMessage, string topic = null, Action<IMessagePublishedEventArgs> MessagePublished = null, byte qosLevel = 2, bool retain = false)
+        }
+
+        public async Task<IResult> PublishEventAsync(IEventMessage eventMessage)
         {
             if (messageClient == null || !messageClient.IsConnected)
                 return new Result(false, new Message(MessageType.Warning, "MessageClient is not initialized or not connected"));
@@ -423,17 +423,17 @@ namespace BaSyx.API.Components
 
             try
             {
-                string messageTopic = topic ?? eventMessage.Topic; 
                 string message = JsonConvert.SerializeObject(eventMessage, Formatting.Indented);
-                return messageClient.Publish(messageTopic, message, MessagePublished, qosLevel, retain);
+                return await messageClient.PublishAsync(eventMessage.Topic, message).ConfigureAwait(false);
             }
             catch (Exception e)
             {
-                logger.Error(e, "Error sending event message");
+                logger.LogError(e, "Error sending event message");
                 return new Result(e);
             }
         }
 
+        public IResult PublishEvent(IEventMessage eventMessage) => PublishEventAsync(eventMessage).Result;        
        
         public virtual void ConfigureEventHandler(IMessageClient messageClient)
         {

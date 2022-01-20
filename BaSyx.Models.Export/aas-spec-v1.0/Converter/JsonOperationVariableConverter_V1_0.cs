@@ -9,9 +9,9 @@
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
 using BaSyx.Models.Core.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NLog;
 using System;
 using System.Collections.Generic;
 
@@ -19,7 +19,7 @@ namespace BaSyx.Models.Export.Converter
 {
     public class JsonOperationVariableConverter_V1_0 : JsonConverter<List<OperationVariable_V1_0>>
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<JsonOperationVariableConverter_V1_0>();
 
         public override List<OperationVariable_V1_0> ReadJson(JsonReader reader, Type objectType, List<OperationVariable_V1_0> existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
@@ -31,7 +31,7 @@ namespace BaSyx.Models.Export.Converter
             }
             catch (Exception e)
             {
-                logger.Error(e);
+                logger.LogError(e, "Exception");
             }
 
             if (jArray == null || jArray.Count == 0)
@@ -73,7 +73,7 @@ namespace BaSyx.Models.Export.Converter
         {
             if(modelType == null)
             {
-                logger.Warn("ModelType is null");
+                logger.LogWarning("ModelType is null");
                 return null;
             }
                        
@@ -95,7 +95,7 @@ namespace BaSyx.Models.Export.Converter
                 return new SubmodelElementCollection_V1_0();
             else
             {
-                logger.Warn("ModelType is unknown: " + modelType.Name);
+                logger.LogWarning("ModelType is unknown: " + modelType.Name);
                 return null;
             }
         }

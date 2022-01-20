@@ -14,18 +14,18 @@ using BaSyx.Models.Core.Attributes;
 using BaSyx.Models.Core.AssetAdministrationShell.Identification;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.Reflection;
 using BaSyx.Models.Core.Common;
 using BaSyx.Models.Core.AssetAdministrationShell.Semantics;
+using Microsoft.Extensions.Logging;
 
 namespace BaSyx.Models.Extensions
 {
     public class SubmodelElementConverter : JsonConverter<ISubmodelElement>
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<SubmodelElementConverter>();
 
         static Dictionary<string, Type> DataElementInformationTypes;
         static SubmodelElementConverter()
@@ -56,14 +56,14 @@ namespace BaSyx.Models.Extensions
             }
             catch (Exception e)
             {
-                logger.Error(e, $"Unable to load JObject from type ${objectType.Name}");
+                logger.LogError(e, $"Unable to load JObject from type ${objectType.Name}");
                 return null;
             }
 
             ModelType modelType = jObject.SelectToken("modelType")?.ToObject<ModelType>(serializer);
             if (modelType == null)
             {
-                logger.Error("ModelType missing: " + jObject.ToString());
+                logger.LogError("ModelType missing: " + jObject.ToString());
                 return null;
             }
 
@@ -116,7 +116,7 @@ namespace BaSyx.Models.Extensions
 
             if (submodelElement == null)
             {
-                logger.Error("SubmodelElement is null: " + jObject.ToString());
+                logger.LogError("SubmodelElement is null: " + jObject.ToString());
                 return null;
             }
 

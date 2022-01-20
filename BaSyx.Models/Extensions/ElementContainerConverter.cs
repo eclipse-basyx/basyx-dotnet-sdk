@@ -9,15 +9,15 @@
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
 using BaSyx.Utils.DependencyInjection.Abstractions;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using NLog;
 using System;
 
 namespace BaSyx.Models.Extensions
 {
     public class ElementContainerConverter : JsonConverter
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<ElementContainerConverter>();
 
         public override bool CanWrite => false;
         public override bool CanRead => true;
@@ -35,7 +35,7 @@ namespace BaSyx.Models.Extensions
                 }
                 catch (Exception e)
                 {
-                    logger.Error(e, "Error deserializing ElementContainer");
+                    logger.LogError(e, "Error deserializing ElementContainer");
                     return null;
                 }
             }
@@ -57,7 +57,7 @@ namespace BaSyx.Models.Extensions
                 }
                 catch (Exception e)
                 {
-                    logger.Error(e, "Error deserializing ElementContainer");
+                    logger.LogError(e, "Error deserializing ElementContainer");
                     return null;
                 }
             }

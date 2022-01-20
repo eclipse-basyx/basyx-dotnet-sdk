@@ -19,7 +19,6 @@ using BaSyx.Models.Extensions.Semantics.DataSpecifications;
 using Microsoft.Extensions.FileProviders;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.IO;
@@ -30,6 +29,7 @@ using System.Xml;
 using System.Xml.Schema;
 using System.Xml.Serialization;
 using File = BaSyx.Models.Core.AssetAdministrationShell.Implementations.File;
+using Microsoft.Extensions.Logging;
 
 namespace BaSyx.Models.Export
 {
@@ -85,7 +85,7 @@ namespace BaSyx.Models.Export
 
         private string ContentRoot = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
 
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<AssetAdministrationShellEnvironment_V1_0>();
         private static readonly ManifestEmbeddedFileProvider fileProvider;
 
         public static JsonSerializerSettings JsonSettings;
@@ -320,7 +320,7 @@ namespace BaSyx.Models.Export
                     }
                     catch (Exception e)
                     {
-                        logger.Error(e);
+                        logger.LogError(e, "Exception");
                     }
                     break;
                 case ExportType.Xml:
@@ -339,7 +339,7 @@ namespace BaSyx.Models.Export
                     }
                     catch (Exception e)
                     {
-                        logger.Error(e);
+                        logger.LogError(e, "Exception");
                     }
                     break;
                 default:
@@ -379,7 +379,7 @@ namespace BaSyx.Models.Export
             }
             catch (Exception e)
             {
-                logger.Error(e, "Failed to read environment - Exception: " + e.Message);
+                logger.LogError(e, "Failed to read environment - Exception: " + e.Message);
                 return null;
             }
         }
@@ -499,9 +499,9 @@ namespace BaSyx.Models.Export
         private static void ValidationCallBack(object sender, ValidationEventArgs args)
         {
             if (args.Severity == XmlSeverityType.Warning)
-                logger.Warn("Validation warning: " + args.Message);
+                logger.LogWarning("Validation warning: " + args.Message);
             else
-                logger.Error("Validation error: " + args.Message + " | LineNumber: " + args.Exception.LineNumber + " | LinePosition: " + args.Exception.LinePosition);
+                logger.LogError("Validation error: " + args.Message + " | LineNumber: " + args.Exception.LineNumber + " | LinePosition: " + args.Exception.LinePosition);
 
         }    
     }

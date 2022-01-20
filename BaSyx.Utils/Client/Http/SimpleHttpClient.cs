@@ -11,8 +11,8 @@
 using BaSyx.Utils.JsonHandling;
 using BaSyx.Utils.ResultHandling;
 using BaSyx.Utils.Settings.Sections;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.Net;
@@ -27,7 +27,7 @@ namespace BaSyx.Utils.Client.Http
 {
     public class SimpleHttpClient : IDisposable
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<SimpleHttpClient>();
         public HttpClient HttpClient { get; }
         public HttpMessageHandler HttpMessageHandler { get; }
         public JsonSerializerSettings JsonSerializerSettings { get; set; }
@@ -87,7 +87,7 @@ namespace BaSyx.Utils.Client.Http
             {
                 if(clientHandler == null)
                 {
-                    logger.Error("Error loading proxy settings -> Client handler is null");
+                    logger.LogError("Error loading proxy settings -> Client handler is null");
                     return;
                 }
 

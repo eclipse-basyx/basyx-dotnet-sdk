@@ -8,7 +8,7 @@
 *
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
-using NLog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.IO;
 using System.Linq;
@@ -17,7 +17,7 @@ namespace BaSyx.Utils.PathHandling
 {
     public static class PathExtensions
     {
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger("PathHandling");
         public static FileInfo ToFile(this Stream stream, string filePath)
         {
             try
@@ -31,7 +31,7 @@ namespace BaSyx.Utils.PathHandling
             }
             catch (Exception e)
             {
-                logger.Error(e, "Error writing stream to file: " + e.Message);
+                logger.LogError(e, "Error writing stream to file: " + e.Message);
                 return null;
             }
         }

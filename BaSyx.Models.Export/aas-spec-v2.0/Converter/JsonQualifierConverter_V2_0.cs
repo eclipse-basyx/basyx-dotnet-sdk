@@ -9,9 +9,9 @@
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
 using BaSyx.Models.Core.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NLog;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,7 +20,7 @@ namespace BaSyx.Models.Export.Converter
 {
     public class JsonQualifierConverter_V2_0 : JsonConverter<List<EnvironmentConstraint_V2_0>>
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<JsonQualifierConverter_V2_0>();
 
         public override List<EnvironmentConstraint_V2_0> ReadJson(JsonReader reader, Type objectType, List<EnvironmentConstraint_V2_0> existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
@@ -54,7 +54,7 @@ namespace BaSyx.Models.Export.Converter
             }
             catch (Exception e)
             {
-                logger.Error(e);
+                logger.LogError(e, "Error while reading JSON");
                 return null;
             }
         }
@@ -69,7 +69,7 @@ namespace BaSyx.Models.Export.Converter
             }
             catch (Exception e)
             {
-                logger.Error(e);
+                logger.LogError(e, "Error while writing JSON");
             }
         }
     }

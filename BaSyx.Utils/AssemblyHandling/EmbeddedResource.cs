@@ -9,7 +9,7 @@
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
 using Microsoft.Extensions.FileProviders;
-using NLog;
+using Microsoft.Extensions.Logging;
 using System.IO;
 using System.Reflection;
 
@@ -17,7 +17,7 @@ namespace BaSyx.Utils.AssemblyHandling
 {
     public static class EmbeddedResource
     {
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger("EmbeddedResource");
 
         /// <summary>
         /// Checks whether a resource is available in the assembly
@@ -59,12 +59,12 @@ namespace BaSyx.Utils.AssemblyHandling
                         stream.CopyTo(fileStream);
                     }
                 }
-                logger.Info($"Resource '{resourceFileName}' successfully created at {destinationFilename}");
+                logger.LogInformation($"Resource '{resourceFileName}' successfully created at {destinationFilename}");
                 return true;
             }
             else
             {
-                logger.Error($"Resource '{resourceFileName}' not found in assembly {assembly.GetName().Name}");
+                logger.LogError($"Resource '{resourceFileName}' not found in assembly {assembly.GetName().Name}");
                 return false;
             }
         }

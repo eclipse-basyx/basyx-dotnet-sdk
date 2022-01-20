@@ -9,21 +9,20 @@
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
 using BaSyx.Utils.AssemblyHandling;
-using BaSyx.Utils.Settings;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
-using NLog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Reflection;
 using System.Xml.Serialization;
 
-namespace BaSyx.Utils.DependencyInjection
+namespace BaSyx.Utils.Settings.Types
 {
     public class DependencySettings : Settings<DependencySettings>
     {
-        private static Logger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<DependencySettings>();
 
         public DependencyConfiguration DependencyCollection { get; set; } = new DependencyConfiguration();
 
@@ -65,7 +64,7 @@ namespace BaSyx.Utils.DependencyInjection
                         }
                         catch (Exception e)
                         {
-                            logger.Error(e, "Failed to load assembly " + dllPath);
+                            logger.LogError(e, "Failed to load assembly " + dllPath);
                         }
                      
                     }
@@ -85,7 +84,7 @@ namespace BaSyx.Utils.DependencyInjection
                     }
                     catch (Exception e)
                     {
-                        logger.Error(e, "Failed to load dependency " + dependency.ImplementationType + " for interface: " + dependency.InterfaceType);
+                        logger.LogError(e, "Failed to load dependency " + dependency.ImplementationType + " for interface: " + dependency.InterfaceType);
                         continue;
                     }
                 }

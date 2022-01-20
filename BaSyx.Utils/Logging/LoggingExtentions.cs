@@ -10,14 +10,34 @@
 *******************************************************************************/
 using BaSyx.Utils.ResultHandling;
 using Newtonsoft.Json;
-using NLog;
 using System;
 using System.Text;
 
-namespace BaSyx.Utils.Logging
+namespace Microsoft.Extensions.Logging
 {
     public static class LoggingExtentions
     {
+        private static ILoggerFactory _factory = null;
+
+        public static ILoggerFactory LoggerFactory
+        {
+            get
+            {
+                if (_factory == null)
+                {
+                    _factory = new LoggerFactory();                    
+                }
+                return _factory;
+            }
+            set
+            {
+                _factory = value;
+            }
+        }
+
+        public static ILogger<T> CreateLogger<T>() => LoggerFactory.CreateLogger<T>();
+        public static ILogger CreateLogger(string categoryName) => LoggerFactory.CreateLogger(categoryName);
+
         public static void LogResult(this ILogger logger, IResult result, LogLevel logLevel, string additionalText = null, Exception exp = null)
             => LogResult(result, logger, logLevel, additionalText, exp);
 

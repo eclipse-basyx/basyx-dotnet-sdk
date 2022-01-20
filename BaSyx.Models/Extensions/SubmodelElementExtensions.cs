@@ -15,7 +15,7 @@ using BaSyx.Models.Core.AssetAdministrationShell.Semantics;
 using BaSyx.Models.Core.Attributes;
 using BaSyx.Models.Core.Common;
 using BaSyx.Models.Extensions.Semantics.DataSpecifications;
-using NLog;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -26,7 +26,7 @@ namespace BaSyx.Models.Extensions
 {
     public static class SubmodelElementExtensions
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger("SubmodelElementExtensions");
 
         public const BindingFlags DEFAULT_BINDING_FLAGS = BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static;
 
@@ -45,7 +45,7 @@ namespace BaSyx.Models.Extensions
             if (collection != null)
             {
                 if (!collection.AllowDuplicates || !collection.Ordered)
-                    logger.Warn($"SubmodelElementCollection {collection.IdShort} has AllowDuplicated or Ordered set to false. The next line in code could fail converting the elements to datatype IEnumerable<{typeof(T).Name}>");
+                    logger.LogWarning($"SubmodelElementCollection {collection.IdShort} has AllowDuplicated or Ordered set to false. The next line in code could fail converting the elements to datatype IEnumerable<{typeof(T).Name}>");
 
                 return collection.Value.Select(s => s.Cast<IProperty>().ToObject<T>());
             }
@@ -250,7 +250,7 @@ namespace BaSyx.Models.Extensions
                 DataType dataType = DataType.GetDataTypeFromSystemType(propertyInfo.PropertyType);
                 if (dataType == null)
                 {                    
-                    logger.Warn($"Unable to convert system type {propertyInfo.PropertyType} to DataType");
+                    logger.LogWarning($"Unable to convert system type {propertyInfo.PropertyType} to DataType");
                     return null;
                 }
 

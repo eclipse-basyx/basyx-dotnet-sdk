@@ -9,9 +9,9 @@
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
 using BaSyx.Models.Core.Common;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using NLog;
 using System;
 using System.Globalization;
 using System.Runtime.Serialization;
@@ -21,7 +21,7 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
     [DataContract]
     public class ElementValue : IValue
     {
-        private static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<ElementValue>();
 
         internal object _value;
         [JsonProperty(DefaultValueHandling = DefaultValueHandling.Include, NullValueHandling = NullValueHandling.Include)]
@@ -69,7 +69,7 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
                 return value;
             else if (type == typeof(Uri))
                 try { return new Uri(value.ToString()); } catch (Exception uriExc) { 
-                    logger.Error(uriExc, $"Cannot convert from {value?.GetType()} to {type.Name} | value: {value?.ToString()}");
+                    logger.LogError(uriExc, $"Cannot convert from {value?.GetType()} to {type.Name} | value: {value?.ToString()}");
                     throw new InvalidOperationException($"Cannot convert from {value?.GetType()} to {type.Name} | value: {value?.ToString()}", uriExc);
                 }
             else
@@ -81,7 +81,7 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
                 }
                 catch (Exception e1)
                 {
-                    logger.Warn(e1, $"Cannot change type from {value?.GetType()} to {type.Name} | value: {value?.ToString()}");
+                    logger.LogWarning(e1, $"Cannot change type from {value?.GetType()} to {type.Name} | value: {value?.ToString()}");
 
                     try
                     {
@@ -91,7 +91,7 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
                     }
                     catch (Exception e2)
                     {
-                        logger.Error(e2, $"Cannot convert from {value?.GetType()} to {type.Name} | value: {value?.ToString()}");
+                        logger.LogError(e2, $"Cannot convert from {value?.GetType()} to {type.Name} | value: {value?.ToString()}");
                         throw new InvalidCastException($"Cannot convert from {value?.GetType()} to {type.Name} | value: {value?.ToString()}", e2);
                     }
                 }
@@ -108,7 +108,7 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
                 try { return (T)Activator.CreateInstance(typeof(Uri), value.ToString()); }
                 catch (Exception uriExc)
                 {
-                    logger.Error(uriExc, $"Cannot convert from {value?.GetType()} to {typeof(T)} | value: {value?.ToString()}");
+                    logger.LogError(uriExc, $"Cannot convert from {value?.GetType()} to {typeof(T)} | value: {value?.ToString()}");
                     throw new InvalidOperationException($"Cannot convert from {value?.GetType()} to {typeof(T)} | value: {value?.ToString()}", uriExc);
                 }
             else
@@ -120,7 +120,7 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
                 }
                 catch (Exception e1)
                 {
-                    logger.Warn(e1, $"Cannot change type from {value?.GetType()} to {typeof(T)} | value: {value?.ToString()}");
+                    logger.LogWarning(e1, $"Cannot change type from {value?.GetType()} to {typeof(T)} | value: {value?.ToString()}");
 
                     try
                     {
@@ -130,7 +130,7 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
                     }
                     catch (Exception e2)
                     {
-                        logger.Error(e2, $"Cannot convert from {value?.GetType()} to {typeof(T)} | value: {value?.ToString()}");
+                        logger.LogError(e2, $"Cannot convert from {value?.GetType()} to {typeof(T)} | value: {value?.ToString()}");
                         throw new InvalidCastException($"Cannot convert from {value?.GetType()} to {typeof(T)} | value: {value?.ToString()}", e2);
                     }
                 }

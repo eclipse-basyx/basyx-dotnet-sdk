@@ -44,11 +44,6 @@ namespace BaSyx.API.Components
             throw new NotImplementedException();
         }
 
-        public IResult PublishEvent(IEventMessage eventMessage, string topic, Action<IMessagePublishedEventArgs> MessagePublished, byte qosLevel)
-        {
-            throw new NotImplementedException();
-        }
-
         public SubmodelElementHandler RetrieveSubmodelElementHandler(string submodelElementIdShort)
         {
             throw new NotImplementedException();
@@ -97,7 +92,7 @@ namespace BaSyx.API.Components
         }
         
 
-        public IResult PublishEvent(IEventMessage eventMessage, string topic, Action<IMessagePublishedEventArgs> MessagePublished, byte qosLevel, bool retain)
+        public IResult PublishEvent(IEventMessage eventMessage)
         {
             throw new NotImplementedException();
         }

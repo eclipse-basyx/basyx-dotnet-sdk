@@ -17,26 +17,26 @@ using System.Collections.Generic;
 using System.Linq;
 using BaSyx.Models.Core.AssetAdministrationShell.Semantics;
 using BaSyx.Models.Core.Common;
-using NLog;
+using Microsoft.Extensions.Logging;
 
 namespace BaSyx.Models.Export.EnvironmentSubmodelElements
 {
     public static class EnvironmentSubmodelElementFactory_V1_0
     {
-        public static readonly ILogger logger = LogManager.GetCurrentClassLogger();
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger("EnvironmentSubmodelElementFactory_V1_0");
 
         public static ISubmodelElement ToSubmodelElement(this SubmodelElementType_V1_0 envSubmodelElement, List<IConceptDescription> conceptDescriptions, IReferable parent)
         {
             if (envSubmodelElement == null)
             {
-                logger.Warn("EnvironmentSubmodelElement is null");
+                logger.LogWarning("EnvironmentSubmodelElement is null");
                 return null;
             }
 
             ModelType modelType = envSubmodelElement.ModelType;
             if (modelType == null)
             {
-                logger.Warn("ModelType of Element " + envSubmodelElement.IdShort + " is null");
+                logger.LogWarning("ModelType of Element " + envSubmodelElement.IdShort + " is null");
                 return null;
             }
             SubmodelElement submodelElement = null;
@@ -50,7 +50,7 @@ namespace BaSyx.Models.Export.EnvironmentSubmodelElements
                 }
                 else
                 {
-                    logger.Warn("Unable to parse ValueType of Property " + castedProperty.IdShort + " - ValueType: " + castedProperty.ValueType);
+                    logger.LogWarning("Unable to parse ValueType of Property " + castedProperty.IdShort + " - ValueType: " + castedProperty.ValueType);
                     property = new Property(castedProperty.IdShort);
                 }
 
@@ -147,7 +147,7 @@ namespace BaSyx.Models.Export.EnvironmentSubmodelElements
 
             if (submodelElement == null)
             {
-                logger.Warn("SubmodelElement " + envSubmodelElement.IdShort + " is still null");
+                logger.LogWarning("SubmodelElement " + envSubmodelElement.IdShort + " is still null");
                 return null;
             }
 
