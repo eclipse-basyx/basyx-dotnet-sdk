@@ -9,31 +9,26 @@
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
 using System;
+using System.Threading.Tasks;
 using BaSyx.Utils.ResultHandling;
 
 namespace BaSyx.Utils.Client
 {
-    public interface IMessageClient
+    public interface IMessageClient : IDisposable
     {
         bool IsConnected { get; }
 
-        IResult Publish(string topic, string message, Action<IMessagePublishedEventArgs> messagePublishedHandler, byte qosLevel, bool retain);
-        IResult Subscribe(string topic, Action<IMessageReceivedEventArgs> messageReceivedHandler, byte qosLevel);
-        IResult Unsubscribe(string topic);
+        Task<IResult> PublishAsync(string topic, string message);
+        Task<IResult> SubscribeAsync(string topic, Action<IMessageReceivedEventArgs> messageReceivedHandler);
+        Task<IResult> UnsubscribeAsync(string topic);
 
-        IResult Start();
-        IResult Stop();
+        Task<IResult> StartAsync();
+        Task<IResult> StopAsync();
     }
-    public interface IMessagePublishedEventArgs
-    {
-        bool IsPublished { get; }
-        string MessageId { get; }        
-    }
+
     public interface IMessageReceivedEventArgs
     {
         string Message { get; }
         string Topic { get; }
-        byte QosLevel { get; }
     }
-
 }
