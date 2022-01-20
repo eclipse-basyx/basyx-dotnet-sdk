@@ -11,33 +11,88 @@
 using System;
 using System.Text;
 using System.Threading;
-using NLog;
-using uPLibrary.Networking.M2Mqtt;
-using uPLibrary.Networking.M2Mqtt.Messages;
-using BaSyx.Utils.ResultHandling;
 using System.Security.Cryptography.X509Certificates;
 using System.Collections.Generic;
+using System.Threading.Tasks;
+using BaSyx.Utils.ResultHandling;
+using MQTTnet;
+using MQTTnet.Client;
+using MQTTnet.Client.Options;
+using MQTTnet.Client.Publishing;
+using MQTTnet.Client.Subscribing;
+using MQTTnet.Protocol;
+using MQTTnet.Client.Connecting;
+using MQTTnet.Client.Disconnecting;
+using MQTTnet.Client.Unsubscribing;
+using Microsoft.Extensions.Logging;
 
 namespace BaSyx.Utils.Client.Mqtt
 {
     public class SimpleMqttClient : IMessageClient
     {
-        private MqttClient mqttClient;
-        public readonly MqttConfig MqttConfig;
+        private static readonly ILogger logger = LoggingExtentions.CreateLogger<SimpleMqttClient>();
+        private const byte DEFAULT_QOS_LEVEL = 2;
 
-        private Dictionary<string, Action<IMessageReceivedEventArgs>> topicMessageReceivedHandler = new Dictionary<string, Action<IMessageReceivedEventArgs>>();
-        private Action<IMessagePublishedEventArgs> msgPublishedMethod = null;
+        private IMqttClient mqttClient;
+        private IMqttClientOptions mqttOptions;
+        private readonly Dictionary<string, Action<IMessageReceivedEventArgs>> msgReceivedHandler;
+        private bool disposedValue;
 
-        private ManualResetEvent connectionClosedResetEvent;
-        public EventHandler<EventArgs> ConnectionClosed;
+        public event EventHandler<ConnectionEstablishedEventArgs> ConnectionEstablished;
+        public event EventHandler<ConnectionClosedEventArgs> ConnectionClosed;
 
-        private static readonly Logger logger = LogManager.GetCurrentClassLogger();
+        public MqttClientConfiguration MqttConfig { get; private set; }
 
-        public SimpleMqttClient(MqttConfig config)
+        public SimpleMqttClient(MqttClientConfiguration config)
         {
-            MqttConfig = config;        
+            MqttConfig = config;
+            msgReceivedHandler = new Dictionary<string, Action<IMessageReceivedEventArgs>>();            
         }
 
+        private void LoadConfiguration(MqttClientConfiguration config)
+        {            
+            var builder = new MqttClientOptionsBuilder();
+            if (!string.IsNullOrEmpty(config.ClientId))
+                builder.WithClientId(config.ClientId);
+            if (!string.IsNullOrEmpty(config.BrokerEndpoint))
+            {
+                Uri endpoint = new Uri(config.BrokerEndpoint);
+                builder.WithTcpServer(endpoint.Host, endpoint.Port);
+            }
+            else
+                throw new ArgumentNullException("BrokerEndpoint");
+            if (config.Credentials != null)
+                builder.WithCredentials(config.Credentials.Username, config.Credentials.Password);
+            if (config.Security != null)
+            {
+                builder.WithTls(new MqttClientOptionsBuilderTlsParameters()
+                {
+                    UseTls = true,
+                    SslProtocol = System.Security.Authentication.SslProtocols.Tls12,
+                    Certificates = new List<X509Certificate>()
+                    {
+                        config.Security.CaCert, config.Security.ClientCert
+                    }
+                });
+            }
+            
+
+            builder.WithCleanSession(config.CleanSession);
+            builder.WithKeepAlivePeriod(TimeSpan.FromSeconds(config.KeepAlivePeriod));
+            if (config.WillFlag)
+            {
+                var willMsg = new MqttApplicationMessageBuilder()
+                    .WithTopic(config.WillTopic)
+                    .WithPayload(config.WillMessage)
+                    .WithQualityOfServiceLevel(config.WillQosLevel)
+                    .WithRetainFlag(config.WillRetain)
+                    .Build();
+                builder.WithWillMessage(willMsg);
+            }
+
+            mqttOptions = builder.Build();
+        }
+ 
         public bool IsConnected
         {
             get
@@ -48,50 +103,104 @@ namespace BaSyx.Utils.Client.Mqtt
                     return false;
             }
         }
-        public IResult Publish(string topic, string message) => Publish(topic, message, null, 2, false);
 
-        public IResult Publish(string topic, string message, Action<IMessagePublishedEventArgs> messagePublishedHandler, byte qosLevel, bool retain = false)
+        public async Task<IResult> PublishAsync(string topic, string message) 
+            => await PublishAsync(topic, message, DEFAULT_QOS_LEVEL, false).ConfigureAwait(false);
+
+        public async Task<IResult> PublishAsync(string topic, string message, byte qosLevel, bool retain)
         {
-            if (messagePublishedHandler != null && this.msgPublishedMethod == null)
-            {
-                msgPublishedMethod = messagePublishedHandler;
-                mqttClient.MqttMsgPublished += MqttClient_MqttMsgPublished;
-            }
+            var msg = new MqttApplicationMessageBuilder()
+                .WithTopic(topic)
+                .WithPayload(Encoding.UTF8.GetBytes(message))
+                .WithQualityOfServiceLevel(qosLevel)
+                .WithRetainFlag(retain)
+                .Build();
 
-            byte[] bMessage = Encoding.UTF8.GetBytes(message);
-            
-            ushort messageId = mqttClient.Publish(topic, bMessage, qosLevel, retain);
-            return new Result<ushort>(true, messageId);
+            var result = await mqttClient.PublishAsync(msg, CancellationToken.None).ConfigureAwait(false);
+
+            if (result.ReasonCode == MqttClientPublishReasonCode.Success)
+                return new Result(true);
+            else
+                return new Result(false, new Message(MessageType.Error, result.ReasonString, Enum.GetName(typeof(MqttClientPublishReasonCode), result.ReasonCode)));
         }
 
-        public IResult Subscribe(string topic, Action<IMessageReceivedEventArgs> messageReceivedHandler, byte qosLevel)
+        public async Task<IResult> SubscribeAsync(string topic, Action<IMessageReceivedEventArgs> messageReceivedHandler) 
+            => await SubscribeAsync(topic, messageReceivedHandler, DEFAULT_QOS_LEVEL).ConfigureAwait(false);
+
+        public async Task<IResult> SubscribeAsync(string topic, Action<IMessageReceivedEventArgs> messageReceivedHandler, byte qosLevel)
         {
             if (string.IsNullOrEmpty(topic))
                 return new Result(new ArgumentNullException(nameof(topic), "The topic is null or empty"));
             if (messageReceivedHandler == null)
                 return new Result(new ArgumentNullException(nameof(messageReceivedHandler), "The message received delegate cannot be null since subscribed messages cannot be received"));
 
-            if (!topicMessageReceivedHandler.ContainsKey(topic))
-                topicMessageReceivedHandler.Add(topic, messageReceivedHandler);
+            MqttQualityOfServiceLevel level = (MqttQualityOfServiceLevel)qosLevel;
 
-            ushort messageId = mqttClient.Subscribe(new string[] { topic }, new byte[] { qosLevel });
-            return new Result<ushort>(true, messageId);
+            var options = new MqttClientSubscribeOptionsBuilder()
+                .WithTopicFilter(topic, level)
+                .Build();
+
+            if (!msgReceivedHandler.ContainsKey(topic))
+                msgReceivedHandler.Add(topic, messageReceivedHandler);
+
+            var result = await mqttClient.SubscribeAsync(options, CancellationToken.None).ConfigureAwait(false);
+
+            foreach (var item in result.Items)
+            {
+                if((int)item.ResultCode > DEFAULT_QOS_LEVEL)
+                    return new Result(false, new Message(MessageType.Error, "Unable to subscribe topic " + item.TopicFilter.Topic, Enum.GetName(typeof(MqttSubscribeReasonCode), item.ResultCode)));
+            }
+            return new Result(true);               
         }
 
-        public IResult Unsubscribe(string topic)
+        public async Task<IResult> UnsubscribeAsync(string topic)
         {
-            if (topicMessageReceivedHandler.ContainsKey(topic))
-                topicMessageReceivedHandler.Remove(topic);
+            if (msgReceivedHandler.ContainsKey(topic))
+                msgReceivedHandler.Remove(topic);
 
-            ushort messageId = mqttClient.Unsubscribe(new string[] { topic });
-            return new Result<ushort>(true, messageId);
+            var result = await mqttClient.UnsubscribeAsync(topic).ConfigureAwait(false);
+
+            foreach (var item in result.Items)
+            {
+                if (item.ReasonCode != MqttClientUnsubscribeResultCode.Success)
+                    return new Result(false, new Message(MessageType.Error, "Unable to unsubscribe topic " + item.TopicFilter, Enum.GetName(typeof(MqttUnsubscribeReasonCode), item.ReasonCode)));
+            }
+            return new Result(true);
         }
 
-        private void MqttClient_MqttMsgPublishReceived(object sender, MqttMsgPublishEventArgs e)
+        public async Task<IResult> StartAsync()
         {
-            string parentOrSelfTopic = GetParentOrSelfTopic(e.Topic, topicMessageReceivedHandler.Keys);
-            if (topicMessageReceivedHandler.TryGetValue(parentOrSelfTopic, out Action<IMessageReceivedEventArgs> action))
-                action.Invoke(new MqttMsgReceivedEventArgs(e));
+            try
+            {
+                LoadConfiguration(MqttConfig);
+                mqttClient = new MqttFactory().CreateMqttClient();
+                mqttClient.UseApplicationMessageReceivedHandler(MessageReceivedHandler);
+                mqttClient.UseConnectedHandler(ConnectedHandler); 
+                mqttClient.UseDisconnectedHandler(DisconnectedHandler);
+                var result = await mqttClient.ConnectAsync(mqttOptions, CancellationToken.None).ConfigureAwait(false);
+                if (result.ResultCode == MqttClientConnectResultCode.Success)
+                    return new Result(true);
+                else
+                    return new Result(false, new Message(MessageType.Error, "Unable to connect", Enum.GetName(typeof(MqttClientConnectResultCode), result.ResultCode)));
+            }
+            catch (Exception e)
+            {
+                logger.LogError(e, "Could not connect MQTT-Broker");
+                return new Result(e);
+            }
+        }       
+
+        public async Task<IResult> StopAsync()
+        {
+            if (mqttClient != null)
+            {
+                if (mqttClient.IsConnected)
+                {                 
+                    await mqttClient.DisconnectAsync().ConfigureAwait(false);
+                }
+                mqttClient.Dispose();
+            }
+            return new Result(true);
         }
 
         private string GetParentOrSelfTopic(string topic, Dictionary<string, Action<IMessageReceivedEventArgs>>.KeyCollection keys)
@@ -113,115 +222,108 @@ namespace BaSyx.Utils.Client.Mqtt
                                 return key;
                         }
                     }
-
                 }
             }
             return topic;
         }
 
-        private void MqttClient_MqttMsgSubscribed(object sender, MqttMsgSubscribedEventArgs e)
+        private Task MessageReceivedHandler(MqttApplicationMessageReceivedEventArgs e)
         {
-            logger.Debug("Subscribed for id = " + e.MessageId);
+            string parentOrSelfTopic = GetParentOrSelfTopic(e.ApplicationMessage.Topic, msgReceivedHandler.Keys);
+            if (msgReceivedHandler.TryGetValue(parentOrSelfTopic, out Action<IMessageReceivedEventArgs> action))
+                action.Invoke(new MqttMsgReceivedEventArgs(e));
+
+            return Task.CompletedTask;
         }
 
-        private void MqttClient_MqttMsgPublished(object sender, uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublishedEventArgs e)
+        private Task ConnectedHandler(MqttClientConnectedEventArgs e)
         {
-            logger.Debug("Published for id = " + e.MessageId);
-            msgPublishedMethod?.Invoke(new MqttMsgPublishedEventArgs(e));
+            string result = Enum.GetName(typeof(MqttClientConnectResultCode), e.ConnectResult.ResultCode);
+            logger.LogInformation($"Connected. Result: {result}");
+            ConnectionEstablished?.Invoke(this, new ConnectionEstablishedEventArgs(result));
+            return Task.CompletedTask;
         }
 
-        public IResult Start()
+        private async Task DisconnectedHandler(MqttClientDisconnectedEventArgs e)
         {
-            Uri endpoint = new Uri(MqttConfig.BrokerEndpoint);
-            MqttSslProtocols protocols = MqttConfig.SecureConnection ? MqttSslProtocols.TLSv1_2 : MqttSslProtocols.None;
-            X509Certificate caCert = null;
-            X509Certificate clientCert = null;
-            if (MqttConfig.Security != null && MqttConfig.Security is MqttSecurity security)
-            {
-                caCert = security.CaCert ?? null;
-                clientCert = security.ClientCert ?? null;
-            }
-            mqttClient = new MqttClient(endpoint.Host, endpoint.Port, MqttConfig.SecureConnection, caCert, clientCert, protocols, null, null);
-            mqttClient.ConnectionClosed += MqttClient_ConnectionClosed;
-            
-            try
-            {
-                byte success;
-                MqttConnectConfig config = MqttConfig.MqttConnectConfig;
-                if (MqttConfig.Credentials is MqttCredentials mqttCreds)
-                    success = mqttClient.Connect(Guid.NewGuid().ToString(), mqttCreds.UserName, mqttCreds.Password, config.WillRetain, config.WillQosLevel, config.WillFlag, config.WillTopic, config.WillMessage, config.CleanSession, config.KeepAlivePeriod);
-                else
-                    success = mqttClient.Connect(Guid.NewGuid().ToString(), null, null, config.WillRetain, config.WillQosLevel, config.WillFlag, config.WillTopic, config.WillMessage, config.CleanSession, config.KeepAlivePeriod);
+            string reason = Enum.GetName(typeof(MqttClientDisconnectReason), e.Reason);
+            logger.LogWarning($"Disconnected. Reason: {reason}");
+            ConnectionClosed?.Invoke(this, new ConnectionClosedEventArgs(reason) { Exception = e.Exception });
 
-                if (success != 0)
-                    return new Result(false, new Message(MessageType.Error, "Could not connect to MQTT Broker", success.ToString()));
-
-                mqttClient.MqttMsgPublishReceived += MqttClient_MqttMsgPublishReceived;
-                return new Result(true);
-            }
-            catch (Exception e)
+            if (MqttConfig.Reconnect)
             {
-                logger.Error(e, "Could not connect MQTT-Broker");
-                return new Result(e);
-            }
-        }
+                await Task.Delay(MqttConfig.ReconnectDelay).ConfigureAwait(false);
 
-        public IResult Stop()
-        {
-            if (mqttClient != null)
-            {
-                if (mqttClient.IsConnected)
+                try
                 {
-                    connectionClosedResetEvent = new ManualResetEvent(false);
-                    //mqttClient.ConnectionClosed += MqttClient_ConnectionClosed;
-                    mqttClient.MqttMsgPublishReceived -= MqttClient_MqttMsgPublishReceived;
-
-                    mqttClient.Disconnect();
-
-                    bool success = connectionClosedResetEvent.WaitOne(5000);
-
-                    if (!success)
+                    await mqttClient.ConnectAsync(mqttOptions, CancellationToken.None).ConfigureAwait(false);
+                    foreach (var handler in msgReceivedHandler)
                     {
-                        logger.Error("Could not close MQTT-Client");
-                        return new Result(false, new Message(MessageType.Error, "Could not close MQTT-Client"));
+                        _ = SubscribeAsync(handler.Key, handler.Value).ConfigureAwait(false);
                     }
+                    logger.LogInformation($"Successfully reconnected");
                 }
-                mqttClient = null;
+                catch(Exception exc)
+                {
+                    logger.LogError(exc, $"Reconnect failed. Trying again in {MqttConfig.ReconnectDelay}ms ...");
+                }
             }
-            return new Result(true);
         }
 
-        private void MqttClient_ConnectionClosed(object sender, EventArgs e)
+        protected virtual async void Dispose(bool disposing)
         {
-            connectionClosedResetEvent?.Set();
-            ConnectionClosed?.Invoke(sender, e);
+            if (!disposedValue)
+            {
+                if (disposing)
+                {
+                    await StopAsync().ConfigureAwait(false);
+                }
+                disposedValue = true;
+            }
+        }
+
+        public void Dispose()
+        {
+            Dispose(disposing: true);
+            GC.SuppressFinalize(this);
         }
     }
 
-    public class MqttMsgPublishedEventArgs : IMessagePublishedEventArgs
+    public class ConnectionEstablishedEventArgs : EventArgs
     {
-        public bool IsPublished { get; }
-        public string MessageId { get; }
-        public MqttMsgPublishedEventArgs(uPLibrary.Networking.M2Mqtt.Messages.MqttMsgPublishedEventArgs e)
+        public string Result { get; }
+
+        public ConnectionEstablishedEventArgs(string result)
         {
-            IsPublished = e.IsPublished;
-            MessageId = e.MessageId.ToString();
+            Result = result;
         }
     }
+
+    public class ConnectionClosedEventArgs : EventArgs
+    {
+        public string Reason { get; }
+        public Exception Exception { get; set; }
+
+        public ConnectionClosedEventArgs(string reason)
+        {
+            Reason = reason;
+        }
+    }
+
     public class MqttMsgReceivedEventArgs : IMessageReceivedEventArgs
     {
         public string Message { get; }
         public string Topic { get; }
-        public byte QosLevel { get; }
+        public byte QoSLevel { get; }
         public bool Retain { get; }
         public bool DupFlag { get; }
-        public MqttMsgReceivedEventArgs(MqttMsgPublishEventArgs e)
+        public MqttMsgReceivedEventArgs(MqttApplicationMessageReceivedEventArgs e)
         {
-            Message = Encoding.UTF8.GetString(e.Message);
-            Topic = e.Topic;
-            QosLevel = e.QosLevel;
-            Retain = e.Retain;
-            DupFlag = e.DupFlag;
+            Message = e.ApplicationMessage.ConvertPayloadToString();
+            Topic = e.ApplicationMessage.Topic;
+            QoSLevel = (byte)e.ApplicationMessage.QualityOfServiceLevel;
+            Retain = e.ApplicationMessage.Retain;
+            DupFlag = e.ApplicationMessage.Dup;
         }
     }
 
