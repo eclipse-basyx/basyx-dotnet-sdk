@@ -15,12 +15,15 @@ using BaSyx.Models.Core.AssetAdministrationShell.Semantics;
 using BaSyx.Models.Core.Attributes;
 using BaSyx.Models.Core.Common;
 using BaSyx.Models.Extensions.Semantics.DataSpecifications;
+using BaSyx.Utils.ResultHandling;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Threading;
+using System.Threading.Tasks;
 
 namespace BaSyx.Models.Extensions
 {
@@ -95,6 +98,17 @@ namespace BaSyx.Models.Extensions
         {
             submodelElement?.Set?.Invoke(submodelElement, new ElementValue(value, valueType));
         }
+
+        public static Task<OperationResult> Invoke(this IOperation operation, IOperationVariableSet inputArguments, IOperationVariableSet inoutputArguments, IOperationVariableSet outputArguments, CancellationToken ct)
+        {
+            return operation?.OnMethodCalled?.Invoke(operation, inputArguments, inoutputArguments, outputArguments, ct);
+        }
+
+        public static async Task<OperationResult> InvokeAsync(this IOperation operation, IOperationVariableSet inputArguments, IOperationVariableSet inoutputArguments, IOperationVariableSet outputArguments, CancellationToken ct)
+        {
+            return await operation?.OnMethodCalled?.Invoke(operation, inputArguments, inoutputArguments, outputArguments, ct);
+        }
+
         public static ISubmodelElementCollection CreateSubmodelElementCollectionFromObject(this object target)
             => CreateSubmodelElementCollectionFromType(target.GetType(), target.GetType().Name, DEFAULT_BINDING_FLAGS, target);
 
