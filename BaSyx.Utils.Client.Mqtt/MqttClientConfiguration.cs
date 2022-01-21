@@ -15,6 +15,8 @@ namespace BaSyx.Utils.Client.Mqtt
     public class MqttClientConfiguration
     {
         [XmlElement]
+        public bool Activated { get; set; }
+        [XmlElement]
         public string ClientId { get; set; }
         [XmlElement]
         public string BrokerEndpoint { get; set; }
@@ -42,7 +44,7 @@ namespace BaSyx.Utils.Client.Mqtt
         [XmlIgnore]
         public IMqttSecurity Security { get; set; }
 
-        internal MqttClientConfiguration() { }
+        public MqttClientConfiguration() { }
 
         public MqttClientConfiguration(string clientId, string brokerEndpoint)
         {
