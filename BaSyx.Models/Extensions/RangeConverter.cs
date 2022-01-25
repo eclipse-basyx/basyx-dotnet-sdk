@@ -15,6 +15,7 @@ using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using System;
+using Range = BaSyx.Models.Core.AssetAdministrationShell.Implementations.Range;
 
 namespace BaSyx.Models.Extensions
 {
