@@ -39,10 +39,10 @@ namespace BaSyx.Utils.Client.Mqtt
         [XmlElement]
         public int ReconnectDelay { get; set; } = 5000;
 
-        [XmlIgnore]
-        public IMqttCredentials Credentials { get; set; }
-        [XmlIgnore]
-        public IMqttSecurity Security { get; set; }
+        [XmlElement]
+        public MqttCredentials Credentials { get; set; }
+        [XmlElement]
+        public MqttSecurity Security { get; set; }
 
         public MqttClientConfiguration() { }
 
@@ -53,12 +53,12 @@ namespace BaSyx.Utils.Client.Mqtt
         }
         public MqttClientConfiguration(string clientId, string brokerEndpoint, IMqttCredentials credentials) : this(clientId, brokerEndpoint)
         {
-            Credentials = credentials;
+            Credentials = new MqttCredentials(credentials.Username, credentials.Password);
         }
 
         public MqttClientConfiguration(string clientId, string brokerEndpoint, IMqttCredentials credentials, IMqttSecurity security) : this(clientId, brokerEndpoint, credentials)
         {
-            Security = security;
+            Security = new MqttSecurity(security.CaCert, security.ClientCert);
         }
     }
 }

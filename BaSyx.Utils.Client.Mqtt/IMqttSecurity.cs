@@ -10,9 +10,11 @@
 *******************************************************************************/
 using BaSyx.Security.Abstractions;
 using System.Security.Cryptography.X509Certificates;
+using System.Xml.Serialization;
 
 namespace BaSyx.Utils.Client.Mqtt
 {
+    [XmlInclude(typeof(MqttSecurity))]
     public interface IMqttSecurity : ISecurity
     {
         X509Certificate CaCert { get; }

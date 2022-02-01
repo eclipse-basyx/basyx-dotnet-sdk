@@ -8,19 +8,24 @@
 *
 * SPDX-License-Identifier: EPL-2.0
 *******************************************************************************/
-using System.Text;
+using System.Xml.Serialization;
 
 namespace BaSyx.Utils.Client.Mqtt
 {
     public class MqttCredentials : IMqttCredentials
     {
-        public string Username { get; }
-        public byte[] Password { get; }
+        [XmlElement]
+        public string Username { get; set; }
+
+        [XmlElement]
+        public string Password { get; set; }
+
+        public MqttCredentials() { }
 
         public MqttCredentials(string username, string password)
         {
             Username = username;
-            Password = Encoding.ASCII.GetBytes(password);
-        }
+            Password = password;
+        }       
     }
 }
