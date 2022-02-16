@@ -37,6 +37,7 @@ namespace BaSyx.Utils.Client.Mqtt
         private IMqttClientOptions mqttOptions;
         private readonly Dictionary<string, Action<IMessageReceivedEventArgs>> msgReceivedHandler;
         private bool disposedValue;
+        private bool manualStop = false;
 
         public event EventHandler<ConnectionEstablishedEventArgs> ConnectionEstablished;
         public event EventHandler<ConnectionClosedEventArgs> ConnectionClosed;
@@ -173,6 +174,8 @@ namespace BaSyx.Utils.Client.Mqtt
             try
             {
                 LoadConfiguration(MqttConfig);
+                manualStop = false;
+
                 mqttClient = new MqttFactory().CreateMqttClient();
                 mqttClient.UseApplicationMessageReceivedHandler(MessageReceivedHandler);
                 mqttClient.UseConnectedHandler(ConnectedHandler); 
@@ -195,7 +198,8 @@ namespace BaSyx.Utils.Client.Mqtt
             if (mqttClient != null)
             {
                 if (mqttClient.IsConnected)
-                {                 
+                {
+                    manualStop = true;
                     await mqttClient.DisconnectAsync().ConfigureAwait(false);
                 }
                 mqttClient.Dispose();
@@ -250,18 +254,24 @@ namespace BaSyx.Utils.Client.Mqtt
             logger.LogWarning($"Disconnected. Reason: {reason}");
             ConnectionClosed?.Invoke(this, new ConnectionClosedEventArgs(reason) { Exception = e.Exception });
 
-            if (MqttConfig.Reconnect)
+            if (!manualStop && MqttConfig.Reconnect)
             {
                 await Task.Delay(MqttConfig.ReconnectDelay).ConfigureAwait(false);
 
                 try
                 {
-                    await mqttClient.ConnectAsync(mqttOptions, CancellationToken.None).ConfigureAwait(false);
-                    foreach (var handler in msgReceivedHandler)
+                    var result = await mqttClient.ConnectAsync(mqttOptions, CancellationToken.None).ConfigureAwait(false);
+                    if (result.ResultCode == MqttClientConnectResultCode.Success)
                     {
-                        _ = SubscribeAsync(handler.Key, handler.Value).ConfigureAwait(false);
+                        foreach (var handler in msgReceivedHandler)
+                        {
+                            _ = SubscribeAsync(handler.Key, handler.Value).ConfigureAwait(false);
+                        }
+                        logger.LogInformation($"Successfully reconnected");
+                        manualStop = false;
                     }
-                    logger.LogInformation($"Successfully reconnected");
+                    else
+                        logger.LogError("Unable to reconnect", Enum.GetName(typeof(MqttClientConnectResultCode), result.ResultCode));
                 }
                 catch(Exception exc)
                 {
