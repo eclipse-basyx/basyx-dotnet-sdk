@@ -69,7 +69,7 @@ namespace BaSyx.Models.Core.AssetAdministrationShell.Implementations
 
             Value = new ElementContainer<ISubmodelElement>(this.Parent, this, null);
 
-            Get = element => { return new ElementValue(Value, new DataType(DataObjectType.AnyType)); };
+            Get = element => { return new ElementValue(Value, typeof(ElementContainer<ISubmodelElement>)); };
             Set = (element, value) => { Value = value?.Value as IElementContainer<ISubmodelElement>; };
         }
 
