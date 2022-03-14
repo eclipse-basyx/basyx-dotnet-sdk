@@ -23,12 +23,23 @@ namespace BaSyx.Utils.Settings.Sections
         [XmlElement]
         public HostingConfiguration Hosting { get; set; }
         [XmlElement]
-        public string DefaultRoute { get; set; }      
+        public string DefaultRoute { get; set; }
+        [XmlElement]
+        public SecurityConfiguration Security { get; set; }
 
         public ServerConfiguration()
         {
             Hosting = new HostingConfiguration();
+            Security = new SecurityConfiguration();
         }
+    }
+
+    public class SecurityConfiguration
+    {
+        [XmlElement]
+        public string ServerCertificatePath { get; set; }
+        [XmlElement]
+        public string ServerCertificatePassword { get; set; }
     }
 
     
