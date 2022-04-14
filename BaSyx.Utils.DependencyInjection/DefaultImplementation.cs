@@ -29,6 +29,7 @@ namespace BaSyx.Utils.DependencyInjection
             services.AddTransient<IAssetAdministrationShell, AssetAdministrationShell>();
             services.AddTransient<ISubmodel, Submodel>();
             services.AddTransient<IView, View>();
+            services.AddTransient<IConceptDictionary, ConceptDictionary>();
 
             services.AddTransient<IAssetAdministrationShellRepositoryDescriptor, AssetAdministrationShellRepositoryDescriptor>();
             services.AddTransient<IAssetAdministrationShellDescriptor, AssetAdministrationShellDescriptor>();
@@ -42,6 +43,8 @@ namespace BaSyx.Utils.DependencyInjection
             services.AddTransient(typeof(IElementContainer<IAsset>), typeof(ElementContainer<IAsset>));
             services.AddTransient(typeof(IElementContainer<ISubmodel>), typeof(ElementContainer<ISubmodel>));
             services.AddTransient(typeof(IElementContainer<ISubmodelElement>), typeof(ElementContainer<ISubmodelElement>));
+            services.AddTransient(typeof(IElementContainer<IView>), typeof(ElementContainer<IView>));
+            services.AddTransient(typeof(IElementContainer<IConceptDictionary>), typeof(ElementContainer<IConceptDictionary>));
 
             services.AddTransient(typeof(IQueryableElementContainer<>), typeof(QueryableElementContainer<>));
             services.AddTransient(typeof(IQueryableElementContainer<IAssetAdministrationShellDescriptor>), typeof(QueryableElementContainer<IAssetAdministrationShellDescriptor>));
