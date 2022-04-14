@@ -53,7 +53,7 @@ namespace BaSyx.Utils.Settings.Types
                 ServiceCollection serviceCollection = new ServiceCollection();
                 foreach (var dependency in DependencyCollection.Dependencies)
                 {
-                    string dllPath = Path.Combine(ExecutingDirectory, dependency.DllPath);
+                    string dllPath = Path.Combine(WorkingDirectory, dependency.DllPath);
                     if(!string.IsNullOrEmpty(dependency.DllPath) && File.Exists(dllPath))
                     {
                         try
