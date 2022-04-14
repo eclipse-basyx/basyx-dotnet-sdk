@@ -53,7 +53,19 @@ namespace BaSyx.Utils.Settings
         [XmlElement(IsNullable = true)]
         public ProxyConfiguration ProxyConfig { get; set; } = new ProxyConfiguration();
 
-        public static string ExecutingDirectory => AppDomain.CurrentDomain.BaseDirectory;//=> Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+        [XmlElement]
+        public string ExecutionPath
+        {
+            get
+            {
+                if (_executionPath == null)
+                    _executionPath = Environment.CurrentDirectory;
+                return _executionPath;
+            }
+            set { _executionPath = value; }
+        }
+
+        public static string WorkingDirectory => Environment.CurrentDirectory;
 
         public const string FileExtension = ".xml";
         public const string MiscellaneousConfig = "Miscellaneous";
@@ -63,13 +75,14 @@ namespace BaSyx.Utils.Settings
         private static readonly ILogger logger = LoggingExtentions.CreateLogger<Settings>();
        
         private FileWatcher fileWatcher;
+        private string _executionPath;
 
         protected Settings()
         { }
 
         public static void AutoLoadSettings()
         {
-            string[] files = Directory.GetFiles(ExecutingDirectory, "*Settings.xml", SearchOption.TopDirectoryOnly);
+            string[] files = Directory.GetFiles(WorkingDirectory, "*Settings.xml", SearchOption.TopDirectoryOnly);
             if (files?.Length > 0)
             {
                 List<Assembly> assemblies = AssemblyUtils.GetLoadedAssemblies();
@@ -204,7 +217,7 @@ namespace BaSyx.Utils.Settings
             Settings settings = LoadSettingsByName(typeof(T).Name);
             if (settings == null)
             {
-                string settingsFilePath = Path.Combine(ExecutingDirectory, FileName);
+                string settingsFilePath = Path.Combine(WorkingDirectory, FileName);
                 settings = LoadSettingsFromFile(settingsFilePath);
             }
             if(settings != null)
