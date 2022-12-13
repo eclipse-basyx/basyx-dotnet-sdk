@@ -37,6 +37,7 @@ namespace BaSyx.Utils.Settings.Types
         public bool? BlazorSupportEnabled { get; set; }
         public string CompanyLogo { get; set; }
         public string Title { get; set; }
+        public string Url { get; set; }
 
         [XmlArray("Links")]
         [XmlArrayItem("Link")]
