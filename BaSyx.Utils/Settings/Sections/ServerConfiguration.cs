@@ -25,6 +25,8 @@ namespace BaSyx.Utils.Settings.Sections
         [XmlElement]
         public string DefaultRoute { get; set; }
         [XmlElement]
+        public string PathBase { get; set; }
+        [XmlElement]
         public SecurityConfiguration Security { get; set; }
 
         public ServerConfiguration()
