@@ -25,6 +25,7 @@ using MQTTnet.Client.Connecting;
 using MQTTnet.Client.Disconnecting;
 using MQTTnet.Client.Unsubscribing;
 using Microsoft.Extensions.Logging;
+using System.Security.Authentication;
 
 namespace BaSyx.Utils.Client.Mqtt
 {
@@ -66,15 +67,26 @@ namespace BaSyx.Utils.Client.Mqtt
                 builder.WithCredentials(config.Credentials.Username, config.Credentials.Password);
             if (config.Security != null)
             {
-                builder.WithTls(new MqttClientOptionsBuilderTlsParameters()
+                var options = new MqttClientOptionsBuilderTlsParameters();
+                if(config.Security.UseTls)
+                    options.UseTls = true;
+                if (!string.IsNullOrEmpty(config.Security.SslProtocols))
+                    options.SslProtocol = (SslProtocols)Enum.Parse(typeof(SslProtocols), config.Security.SslProtocols);
+                if (config.Security.AllowUntrustedCertificates)
+                    options.AllowUntrustedCertificates = true;
+                if (config.Security.IgnoreCertificateChainErrors)
+                    options.IgnoreCertificateChainErrors = true;
+                if (config.Security.IgnoreCertificateRevocationErrors)
+                    options.IgnoreCertificateRevocationErrors = true;
+
+                if (config.Security.CaCert != null && config.Security.ClientCert != null)
                 {
-                    UseTls = true,
-                    SslProtocol = System.Security.Authentication.SslProtocols.Tls12,
-                    Certificates = new List<X509Certificate>()
+                    options.Certificates = new List<X509Certificate>()
                     {
                         config.Security.CaCert, config.Security.ClientCert
-                    }
-                });
+                    };
+                }
+                builder.WithTls(options);
             }
             
 

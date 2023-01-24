@@ -14,8 +14,15 @@ namespace BaSyx.Utils.Client.Mqtt
 {
     public class MqttSecurity : IMqttSecurity
     {
+        public bool UseTls { get; set; }
+        public string SslProtocols { get; set; }
+        public bool AllowUntrustedCertificates { get; set; }
+        public bool IgnoreCertificateChainErrors { get; set; }
+        public bool IgnoreCertificateRevocationErrors { get; set; }
+
         public X509Certificate CaCert { get; }
         public X509Certificate ClientCert { get; }
+
 
         public MqttSecurity(X509Certificate caCert)
         {
