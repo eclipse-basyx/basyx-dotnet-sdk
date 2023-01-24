@@ -14,7 +14,7 @@
     <PackageLicenseExpression>EPL-2.0</PackageLicenseExpression>
     <RunPostBuildEvent>OnOutputUpdated</RunPostBuildEvent>
     <PackageIcon>basyxlogo.png</PackageIcon>
-    <Version>1.0.0</Version>
+    <Version>1.0.1</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
