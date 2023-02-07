@@ -92,7 +92,7 @@ namespace BaSyx.Models.Core.Common
         public static readonly DataObjectType DateTimeStamp = new DataObjectType("dateTimeStamp");
 
         public static readonly DataObjectType AnyURI = new DataObjectType("anyURI");
-        public static readonly DataObjectType Base64Binary = new DataObjectType("base64binary");
+        public static readonly DataObjectType Base64Binary = new DataObjectType("base64Binary");
         public static readonly DataObjectType HexBinary = new DataObjectType("hexBinary");
 
         private static readonly Dictionary<string, DataObjectType> _dataObjectTypes;
